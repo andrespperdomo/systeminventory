@@ -25,7 +25,7 @@ resource "aws_subnet" "public" {
   cidr_block              = var.public_subnets[count.index]
   availability_zone       = element(data.aws_availability_zones.available.names, count.index)
   map_public_ip_on_launch = true
-  tags = merge(local.tags, { Name = "${local.prefix}-public-${count.index + 1}" })
+  tags                    = merge(local.tags, { Name = "${local.prefix}-public-${count.index + 1}" })
 }
 
 resource "aws_subnet" "private" {
@@ -33,7 +33,7 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.app.id
   cidr_block        = var.private_subnets[count.index]
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
-  tags = merge(local.tags, { Name = "${local.prefix}-private-${count.index + 1}" })
+  tags              = merge(local.tags, { Name = "${local.prefix}-private-${count.index + 1}" })
 }
 
 resource "aws_route_table" "public" {
@@ -156,7 +156,7 @@ resource "aws_security_group" "rabbitmq" {
 }
 
 resource "aws_ecr_repository" "app" {
-  name = "${local.prefix}"
+  name = local.prefix
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -173,9 +173,9 @@ resource "aws_ecs_cluster" "app" {
 }
 
 resource "aws_iam_role" "ecs_task_execution" {
-  name = "${local.prefix}-ecs-task-execution-role"
+  name               = "${local.prefix}-ecs-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role_policy.json
-  tags = local.tags
+  tags               = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
@@ -189,9 +189,9 @@ resource "aws_iam_role_policy_attachment" "ecs_task_policy" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "${local.prefix}-ecs-task-role"
+  name               = "${local.prefix}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role_policy.json
-  tags = local.tags
+  tags               = local.tags
 }
 
 resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
@@ -323,16 +323,16 @@ resource "aws_db_subnet_group" "app" {
 }
 
 resource "aws_db_instance" "inventory" {
-  allocated_storage    = 20
-  engine               = "postgres"
-  engine_version       = "15.4"
-  instance_class       = "db.t4g.small"
-  identifier           = "${local.prefix}-db"
-  name                 = var.db_name
-  username             = var.db_username
-  password             = var.db_password
-  skip_final_snapshot  = true
-  publicly_accessible  = false
+  allocated_storage      = 20
+  engine                 = "postgres"
+  engine_version         = "15.4"
+  instance_class         = "db.t4g.small"
+  identifier             = "${local.prefix}-db"
+  name                   = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+  skip_final_snapshot    = true
+  publicly_accessible    = false
   vpc_security_group_ids = [aws_security_group.db.id]
   db_subnet_group_name   = aws_db_subnet_group.app.name
   tags                   = local.tags
@@ -345,18 +345,18 @@ resource "aws_elasticache_subnet_group" "redis" {
 }
 
 resource "aws_elasticache_replication_group" "redis" {
-  replication_group_id          = "${local.prefix}-redis"
-  engine                        = "redis"
-  engine_version                = "7.0"
-  node_type                     = "cache.t4g.micro"
-  number_cache_clusters         = 1
-  automatic_failover_enabled    = false
-  subnet_group_name             = aws_elasticache_subnet_group.redis.name
-  security_group_ids            = [aws_security_group.redis.id]
-  transit_encryption_enabled    = true
-  auth_token                    = random_password.redis.result
-  apply_immediately             = true
-  tags                          = local.tags
+  replication_group_id       = "${local.prefix}-redis"
+  engine                     = "redis"
+  engine_version             = "7.0"
+  node_type                  = "cache.t4g.micro"
+  number_cache_clusters      = 1
+  automatic_failover_enabled = false
+  subnet_group_name          = aws_elasticache_subnet_group.redis.name
+  security_group_ids         = [aws_security_group.redis.id]
+  transit_encryption_enabled = true
+  auth_token                 = random_password.redis.result
+  apply_immediately          = true
+  tags                       = local.tags
 }
 
 resource "random_password" "redis" {
@@ -366,19 +366,19 @@ resource "random_password" "redis" {
 }
 
 resource "aws_mq_broker" "rabbitmq" {
-  broker_name = "${local.prefix}-rabbitmq"
-  engine_type = "RabbitMQ"
-  engine_version = "3.11.22"
-  host_instance_type = "mq.t3.micro"
+  broker_name         = "${local.prefix}-rabbitmq"
+  engine_type         = "RabbitMQ"
+  engine_version      = "3.11.22"
+  host_instance_type  = "mq.t3.micro"
   deployment_mode     = "SINGLE_INSTANCE"
   publicly_accessible = false
   users {
     username = var.mq_username
     password = var.mq_password
   }
-  subnet_ids = aws_subnet.private[*].id
+  subnet_ids      = aws_subnet.private[*].id
   security_groups = [aws_security_group.rabbitmq.id]
-  tags = local.tags
+  tags            = local.tags
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
