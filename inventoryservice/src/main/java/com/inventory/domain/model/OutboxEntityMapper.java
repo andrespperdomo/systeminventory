@@ -1,7 +1,7 @@
 package com.inventory.domain.model;
 
+import com.inventory.domain.outbox.OutboxEvent;
 import com.inventory.infrastructure.persistence.OutboxEventEntity;
-import com.inventory.infrastructure.rabbitmq.model.OutboxEvent;
 
 public class OutboxEntityMapper {
 
@@ -17,6 +17,7 @@ public class OutboxEntityMapper {
 
     public static OutboxEvent toDomain(OutboxEventEntity entity) {
         return new OutboxEvent(
+                entity.id,
                 entity.aggregateId,
                 entity.type,
                 entity.payload,

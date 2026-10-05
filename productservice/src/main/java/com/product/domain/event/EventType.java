@@ -3,5 +3,6 @@ package com.product.domain.event;
 public enum EventType {
     PRODUCT_CREATED,
     PRODUCT_UPDATED,
-    PRODUCT_DELETED
+    PRODUCT_DELETED,
+    RESERVATION_CREATED
 }

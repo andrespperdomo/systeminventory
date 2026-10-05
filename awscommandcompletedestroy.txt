@@ -1,0 +1,11 @@
+-------COMPLETE DESTROY INFRA LAST ITEM SECRET MANAGER ---
+
+aws secretsmanager delete-secret `
+  --secret-id inventory-project-dev-database1 `
+  --force-delete-without-recovery `
+  --region us-east-1
+
+---CHECK DESTROY 
+aws secretsmanager describe-secret `
+  --secret-id inventory-project-dev-database1 `
+  --region us-east-1

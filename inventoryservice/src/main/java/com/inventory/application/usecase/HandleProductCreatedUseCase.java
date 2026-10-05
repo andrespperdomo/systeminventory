@@ -1,11 +1,9 @@
 package com.inventory.application.usecase;
 
 import org.jboss.logging.Logger;
-
 import com.inventory.domain.model.Inventory;
 import com.inventory.domain.repository.InventoryRepository;
 import com.inventory.infrastructure.rabbitmq.event.ProductCreatedEvent;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -23,8 +21,11 @@ public class HandleProductCreatedUseCase {
         }
         LOG.infof("HandleProductCreatedUseCase | event.id=%s", event.id);
         Inventory inventory = new Inventory(
-                // null,
+                null,
                 event.id,
+                null,
+                0,
+                0,
                 0);
 
         inventoryRepository.update(inventory);

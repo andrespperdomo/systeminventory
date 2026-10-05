@@ -7,13 +7,14 @@ import com.product.domain.model.ProductEntityMapper;
 import com.product.domain.repository.ProductRepository;
 import com.product.shared.utils.PageResult;
 
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 @ApplicationScoped
-public class ProductRepositoryImpl implements ProductRepository {
+public class ProductRepositoryImpl implements ProductRepository  {
 
     @Inject
     EntityManager em;
@@ -42,6 +43,18 @@ public class ProductRepositoryImpl implements ProductRepository {
         return Optional.ofNullable(entity)
                 .map(ProductEntityMapper::toDomain);
     }
+
+    @Override
+   public boolean findByName(String name) {
+
+    return !em.createQuery(
+        "SELECT p FROM ProductEntity p WHERE p.name = :name",
+        ProductEntity.class
+    )
+    .setParameter("name", name)
+    .setMaxResults(1).getResultList()
+    .isEmpty();
+}
 
     /*
      * @Override

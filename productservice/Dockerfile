@@ -26,9 +26,11 @@ WORKDIR /apps
 # Copy Quarkus app
 COPY target/quarkus-app/ /app/
 
-# Copy JWT keys
-#COPY src/main/resources/keys /deployments/keys
+RUN apk add --no-cache curl
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -fsS http://localhost:${PORT:-8080}/q/health/ready || exit 1
 
 CMD ["java", "-jar", "/app/quarkus-run.jar"]

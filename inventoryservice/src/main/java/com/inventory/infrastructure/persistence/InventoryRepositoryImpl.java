@@ -3,8 +3,6 @@ package com.inventory.infrastructure.persistence;
 import java.util.Optional;
 
 import org.jboss.logging.Logger;
-
-import com.inventory.application.usecase.HandleProductCreatedUseCase;
 import com.inventory.domain.model.Inventory;
 import com.inventory.domain.model.InventoryEntityMapper;
 import com.inventory.domain.repository.InventoryRepository;
@@ -33,18 +31,29 @@ public class InventoryRepositoryImpl implements InventoryRepository {
                 .findFirst()
                 .orElse(null);
 
-        LOG.info("PASOOOOOOOOOOOOOOOOOO 1");
-
         if (entity != null) {
-            LOG.info("PASOOOOOOOOOOOOOOOOOO 2");
+            System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX????????? QUANTITY " + inventory.quantity());
+            System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX PRODUCT " + inventory.idProduct());
+            System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX AVAILABLE " + inventory.available());
+            System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX RESERVED " + inventory.reserved());
+            System.out.println(em.contains(entity));
+
+            LOG.infof(
+                    "InventoryRepositoryImpl | inventory.productId=%s=================================================================",
+                    inventory.quantity());
             entity.setQuantity(inventory.quantity());
-            entity = em.merge(entity);
+            entity.setAvailableQuantity(inventory.available());
+            entity.setReserved(inventory.reserved());
+            em.merge(entity);
+            em.flush();
+            // entity.setAvailableQuantity(inventory.quantity());
+
         } else {
-            LOG.info("PASOOOOOOOOOOOOOOOOOO 3");
+            System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX INSERTTTTTTT ");
             entity = new InventoryEntity();
             entity.setProductId(inventory.idProduct());
             entity.setQuantity(inventory.quantity());
-
+            entity.setAvailableQuantity(inventory.quantity());
             em.persist(entity);
         }
 
@@ -54,7 +63,15 @@ public class InventoryRepositoryImpl implements InventoryRepository {
     @Override
     public Optional<Inventory> findById(Long id) {
 
-        InventoryEntity entity = em.find(InventoryEntity.class, id);
+        // InventoryEntity entity = em.find(InventoryEntity.class, id);
+
+        InventoryEntity entity = em.createQuery(
+                "SELECT i FROM InventoryEntity i WHERE i.productId = :id",
+                InventoryEntity.class)
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);        
 
         return Optional.ofNullable(entity)
                 .map(InventoryEntityMapper::toDomain);

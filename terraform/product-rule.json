@@ -1,0 +1,11 @@
+﻿[
+  {
+    "Field": "path-pattern",
+    "PathPatternConfig": {
+      "Values": [
+        "/products",
+        "/products/*"
+      ]
+    }
+  }
+]

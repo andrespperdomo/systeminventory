@@ -1,8 +1,10 @@
 package com.inventory.infrastructure.rabbitmq.event;
 
 import java.util.concurrent.CompletionStage;
-import com.inventory.infrastructure.rabbitmq.model.OutboxEvent;
+
+import com.inventory.domain.outbox.OutboxEvent;
 
 public interface EventPublisher {
-    public CompletionStage<Void> publishProductCreated(OutboxEvent outboxEvent);
+   // public CompletionStage<Void> publishProductCreated(OutboxEvent outboxEvent);
+    public CompletionStage<Void> publish(OutboxEvent event) ;
 }

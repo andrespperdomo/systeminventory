@@ -4,14 +4,16 @@ import org.jboss.logging.Logger;
 import com.inventory.application.command.UpdateInventoryCommand;
 import com.inventory.domain.exception.InventoryNotFoundException;
 import com.inventory.domain.model.Inventory;
+import com.inventory.domain.outbox.OutboxEvent;
 import com.inventory.domain.outbox.OutboxStatus;
 import com.inventory.domain.outbox.OutboxType;
 import com.inventory.domain.repository.InventoryRepository;
 import com.inventory.domain.repository.OutboxRepository;
-import com.inventory.infrastructure.rabbitmq.event.InventoryUpdatedEvent;
-import com.inventory.infrastructure.rabbitmq.model.OutboxEvent;
+import com.inventory.infrastructure.rabbitmq.event.ReservationEvent;
+
 import com.inventory.shared.utils.JsonUtil;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -31,20 +33,23 @@ public class UpdateInventoryUseCase {
     }
 
     public Inventory execute(UpdateInventoryCommand command) {
-        LOG.infof("Inventory updated | productId=%s quantity=%d", command.idProduct(),
+        LOG.infof("Inventory updated | productId=%s quantity=%s", command.idProduct(),
                 String.valueOf(command.quantity()));
         // 1. Build domain object (NO ID from command)
         Inventory inventory = repository.findById(Long.valueOf(command.idProduct()))
                 .orElseThrow(() -> new InventoryNotFoundException(command.idProduct()));
 
         // business logic INSIDE domain
-        inventory.decrease(command.quantity());
+        // inventory.decrease(command.quantity());
 
         // 3. Persist updated state
+
+        inventory = inventory.addStock(command.quantity());
         Inventory updated = repository.update(inventory);
+        Log.info("###################################### " + updated.quantity() + "/" + updated.idProduct());
 
         // 4. Save OUTBOX EVENT
-        saveOutboxEvent(command, updated);
+       // saveOutboxEvent(command);
         return updated;
 
     }
@@ -52,25 +57,26 @@ public class UpdateInventoryUseCase {
     // =========================
     // OUTBOX EVENT CREATION
     // =========================
-    private void saveOutboxEvent(UpdateInventoryCommand command, Inventory inventory) {
+   /*  private void saveOutboxEvent(UpdateInventoryCommand command) {
 
-        InventoryUpdatedEvent event = buildEvent(command);
+        ReservationEvent event = buildEvent(command);
 
-        OutboxEvent outboxEvent = new OutboxEvent(command.idProduct(), OutboxType.INVENTORY_UPDATED.name(),
+        OutboxEvent outboxEvent = new OutboxEvent(Long.parseLong(command.idProduct()), command.idProduct(),
+                OutboxType.INVENTORY_UPDATED.name(),
                 JsonUtil.toJson(event),
                 OutboxStatus.PENDING.name(), 0);
 
         outboxRepository.save(outboxEvent);
-    }
+    }*/
 
     // =========================
     // EVENT BUILDER
     // =========================
-    private InventoryUpdatedEvent buildEvent(UpdateInventoryCommand command) {
-        return new InventoryUpdatedEvent(
+    /*private ReservationEvent buildEvent(UpdateInventoryCommand command) {
+        return new ReservationEvent(
                 command.idProduct(),
                 command.quantity(),
                 "STOCK_DECREASE");
-    }
+    }*/
 
 }

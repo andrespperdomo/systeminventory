@@ -20,8 +20,11 @@ public class InventoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
-
+    public Integer availableQuantity;
     public String productId;
-
     public Integer quantity;
+    public Integer reserved;
 }
+   
+    
+  

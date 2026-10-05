@@ -11,6 +11,8 @@ public interface ProductRepository {
 
     Optional<Product> findById(Long id);
 
+    public boolean findByName(String name);
+
     public PageResult<Product> findAllPage(String search, int page, int size);
 
 }

@@ -20,8 +20,8 @@ import com.inventory.application.usecase.UpdateInventoryUseCase;
 import com.inventory.domain.model.Inventory;
 import com.inventory.infrastructure.web.mapper.InventoryMapper;
 import com.inventory.infrastructure.web.request.UpdateInventoryRequest;
+import com.inventory.infrastructure.web.response.InventoryAttributes;
 import com.inventory.infrastructure.web.response.InventoryResponse;
-import com.inventory.infrastructure.web.response.InventoryResponse.Attributes;
 import com.inventory.infrastructure.web.response.InventoryResponse.Data;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,16 +56,22 @@ class InventoryControllerTest {
         command = new UpdateInventoryCommand("1", 10);
 
         // DOMAIN
-        inventory = new Inventory("1", 50);
+        inventory = new Inventory(1L, "1", null, 20, 50, 80);
 
         // RESPONSE
-        response = new InventoryResponse();
-        Data data = new Data();
-        Attributes attr = new Attributes();
-        attr.idProduct = "1";
-        attr.quantity = 50;
-        data.attributes = attr;
-        response.data = data;
+   InventoryResponse response =
+    new InventoryResponse(
+        new InventoryResponse.Data(
+            "Inventory",
+            "1",
+            new InventoryAttributes(
+                "1",
+                0,
+                0,
+                50
+            )
+        )
+    );
 
     }
 

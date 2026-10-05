@@ -1,5 +1,6 @@
 package com.inventory.infrastructure.rabbitmq.consumer;
 
+import java.math.BigDecimal;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -8,6 +9,7 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.inventory.application.command.InventoryProductCommand;
 import com.inventory.application.messaging.EventEnvelope;
 import com.inventory.domain.repository.InventoryRepository;
 import com.inventory.infrastructure.rabbitmq.event.ProductCreatedEvent;
@@ -18,7 +20,9 @@ import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.jboss.logging.Logger;
+
 import com.inventory.application.usecase.HandleProductCreatedUseCase;
+import com.inventory.application.usecase.InventoryProductUseCase;
 
 @ApplicationScoped
 public class RabbitMQConsumer {
@@ -33,12 +37,12 @@ public class RabbitMQConsumer {
     HandleProductCreatedUseCase handleProductCreatedUseCase;
 
     @Inject
-    InventoryRepository inventoryRepository;
+    InventoryProductUseCase inventoryProductUseCase;
 
     @Incoming("product-events-in")
     @Blocking
     public CompletionStage<Void> receive(Message<String> msg) {
-        LOG.info("###################### escucha receive" + msg.getPayload());
+         LOG.info( msg.getPayload()+"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
         try {
             EventEnvelope<ProductCreatedEvent> event = mapper.readValue(
                     msg.getPayload(),
@@ -54,6 +58,12 @@ public class RabbitMQConsumer {
             messages.add(event);
 
             handleProductCreatedUseCase.execute(event.data());
+
+            ProductCreatedEvent productEvent =event.data();
+            InventoryProductCommand inventoryProductCommand=
+            new InventoryProductCommand(productEvent.id, 
+                                      BigDecimal.valueOf(productEvent.price));
+            inventoryProductUseCase.execute(inventoryProductCommand);
 
             return msg.ack();
 

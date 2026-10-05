@@ -31,4 +31,7 @@ COPY target/quarkus-app/ /app/
 
 EXPOSE 8080
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8080/q/health/ready || exit 1
+
 CMD ["java", "-jar", "/app/quarkus-run.jar"]

@@ -7,13 +7,11 @@ import org.jboss.logging.Logger;
 import com.product.domain.repository.OutboxRepository;
 import com.product.infrastructure.rabbitmq.model.OutboxEvent;
 
-import io.quarkus.arc.profile.IfBuildProfile;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@IfBuildProfile("prod")
 public class OutboxProcessor {
 
     @Inject
@@ -24,26 +22,22 @@ public class OutboxProcessor {
 
     private static final Logger LOG = Logger.getLogger(OutboxProcessor.class);
 
-    @Scheduled(every = "5s")
+    @Scheduled(every = "15s")
     void process() {
 
         List<OutboxEvent> events = repository.findPending();
 
         for (OutboxEvent event : events) {
-            LOG.infof("EVENTSSSSSSSSSSSSSSSSSSSSSS | ==================================" + event.payload());
-
             try {
-                rabbitMQPublisher.publishProductCreated(event).toCompletableFuture()
-                        .join();
-                ;
-
-                event.markSent();
-
+                rabbitMQPublisher.publish(event).toCompletableFuture().join();
+                OutboxEvent updatedEvent = event.markSent();
+                repository.save(updatedEvent);
+                LOG.infof("Outbox event %s marked as SENT", event.id());
             } catch (Exception e) {
-                event.incrementRetries();
+                OutboxEvent updatedEvent = event.incrementRetries();
+                repository.save(updatedEvent);
+                LOG.warnf("Outbox event %s failed to publish; retries=%d", event.id(), updatedEvent.retries());
             }
-
-            repository.save(event);
         }
     }
 }

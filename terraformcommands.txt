@@ -1,0 +1,5 @@
+terraform init
+terraform validate
+terraform plan -var-file="environments/dev.tfvars"
+terraform apply -var-file="environments/dev.tfvars"
+terraform destroy -var-file="environments/dev.tfvars"

@@ -9,6 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
 import com.product.application.command.CreateProductCommand;
 import com.product.application.command.ListProductCommand;
@@ -29,6 +30,8 @@ import com.product.infrastructure.web.response.ProductListResponse;
 import com.product.infrastructure.web.response.ProductResponse;
 import com.product.shared.utils.PageResult;
 
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -40,7 +43,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/products")
+@Path("/product")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProductController {
@@ -63,6 +66,8 @@ public class ProductController {
     Logger LOG = Logger.getLogger(ProductController.class.getName());
 
     @POST
+    @RolesAllowed({"USER", "PRODUCT_MANAGER", "ADMIN","ADMINS"})
+    @SecurityRequirement(name = "apiKeyAuth")
     @Operation(summary = "Create product", description = "Creates a new product in the system")
     @APIResponse(responseCode = "201", description = "Product created", content = @Content(schema = @Schema(implementation = ProductResponse.class)))
     @APIResponse(responseCode = "400", description = "Invalid input data")
@@ -100,6 +105,7 @@ public class ProductController {
         return Response.ok(response).build(); // 200 OK
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(summary = "List products", description = "Returns a paginated list of products")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "Successful response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductListResponse.class))),

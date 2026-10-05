@@ -1,27 +1,26 @@
 package com.product.infrastructure.integration;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.concurrent.TimeUnit;
+
 import jakarta.inject.Inject;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.quarkus.arc.profile.IfBuildProfile;
-import io.quarkus.test.TestTransaction;
+
 import io.quarkus.test.junit.QuarkusTest;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.product.application.messaging.EventEnvelope;
 import com.product.domain.event.EventType;
-import com.product.domain.model.OutboxEntityMapper;
-import com.product.domain.model.Product;
-import com.product.domain.repository.OutboxRepository;
-import com.product.domain.repository.ProductRepository;
 import com.product.infrastructure.rabbitmq.enums.Status;
 import com.product.infrastructure.rabbitmq.event.ProductCreatedEvent;
 import com.product.infrastructure.rabbitmq.model.OutboxEvent;
 import com.product.shared.utils.JsonUtil;
 
 @QuarkusTest
-@IfBuildProfile("test")
 class RabbitMQIntegrationTest {
 
     private static final String PRODUCT_ID = "20";
@@ -37,19 +36,12 @@ class RabbitMQIntegrationTest {
     @Inject
     ObjectMapper mapper;
 
-    @Inject
-    OutboxRepository outboxRepository;
-
-    @Inject
-    ProductRepository productRepository;
-
     @BeforeEach
     void setUp() {
         consumer.clear();
     }
 
     @Test
-    @TestTransaction
     void shouldSendAndReceiveProductEvent() throws Exception {
 
         // GIVEN
@@ -58,25 +50,50 @@ class RabbitMQIntegrationTest {
         // WHEN
         publisher.send(outboxEvent.payload())
                 .toCompletableFuture()
-                .orTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                .orTimeout(5, TimeUnit.SECONDS)
                 .join();
 
         String receivedMessage = consumer.awaitMessage();
 
         // THEN
-        assertNotNull(receivedMessage, "Expected message from RabbitMQ");
-
-        EventEnvelope<ProductCreatedEvent> envelope = mapper.readValue(
+        assertNotNull(
                 receivedMessage,
-                new TypeReference<EventEnvelope<ProductCreatedEvent>>() {
-                });
+                "Expected message from RabbitMQ"
+        );
+
+        EventEnvelope<ProductCreatedEvent> envelope =
+                mapper.readValue(
+                        receivedMessage,
+                        new TypeReference<EventEnvelope<ProductCreatedEvent>>() {
+                        }
+                );
 
         assertAll(
-                () -> assertEquals(EventType.PRODUCT_CREATED.name(), envelope.eventType()),
-                () -> assertNotNull(envelope.data()),
-                () -> assertEquals(PRODUCT_ID, envelope.data().id),
-                () -> assertEquals(PRODUCT_NAME, envelope.data().name),
-                () -> assertEquals(PRODUCT_PRICE, envelope.data().price));
+                () -> assertEquals(
+                        EventType.PRODUCT_CREATED.name(),
+                        envelope.eventType()
+                ),
+
+                () -> assertNotNull(
+                        envelope.data(),
+                        "Expected event data"
+                ),
+
+                () -> assertEquals(
+                        PRODUCT_ID,
+                        envelope.data().id
+                ),
+
+                () -> assertEquals(
+                        PRODUCT_NAME,
+                        envelope.data().name
+                ),
+
+                () -> assertEquals(
+                        PRODUCT_PRICE,
+                        envelope.data().price
+                )
+        );
     }
 
     // =========================================================
@@ -86,6 +103,7 @@ class RabbitMQIntegrationTest {
     private ProductCreatedEvent buildProductCreatedEvent() {
 
         ProductCreatedEvent event = new ProductCreatedEvent();
+
         event.id = PRODUCT_ID;
         event.name = PRODUCT_NAME;
         event.price = PRODUCT_PRICE;
@@ -93,38 +111,24 @@ class RabbitMQIntegrationTest {
         return event;
     }
 
-    private Product buildProduct() {
-        return new Product(
-                null,
-                "Iphone 20",
-                "Iphone description",
-                324324.34,
-                34234.56);
-    }
-
     private OutboxEvent buildOutboxEvent() {
 
-        ProductCreatedEvent productEvent = buildProductCreatedEvent();
+        ProductCreatedEvent productEvent =
+                buildProductCreatedEvent();
 
-        EventEnvelope<ProductCreatedEvent> envelope = new EventEnvelope<>(
-                EventType.PRODUCT_CREATED.name(),
-                productEvent);
+        EventEnvelope<ProductCreatedEvent> envelope =
+                new EventEnvelope<>(
+                        EventType.PRODUCT_CREATED.name(),
+                        productEvent
+                );
 
-        OutboxEvent outboxEvent = new OutboxEvent(
+        return new OutboxEvent(
                 null,
                 PRODUCT_ID,
                 EventType.PRODUCT_CREATED.name(),
                 JsonUtil.toJson(envelope),
                 Status.PENDING.name(),
-                0);
-
-        productRepository.save(buildProduct());
-
-        outboxRepository.persist(
-                OutboxEntityMapper.toEntity(outboxEvent));
-        System.out.println("Outboxrepository::" + outboxRepository.count());
-
-        return outboxEvent;
+                0
+        );
     }
-
 }

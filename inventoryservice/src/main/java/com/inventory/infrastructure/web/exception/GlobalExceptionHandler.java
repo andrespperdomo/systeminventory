@@ -5,7 +5,10 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
 import com.inventory.domain.exception.InventoryNotFoundException;
+import com.inventory.domain.exception.RedisNotFoundException;
+import com.inventory.domain.exception.InsufficientAvailableProductException;
 import com.inventory.domain.exception.InsufficientStockException;
+import com.inventory.domain.exception.SaveHistoricalPurchaseException;
 
 @Provider
 public class GlobalExceptionHandler implements ExceptionMapper<RuntimeException> {
@@ -17,23 +20,46 @@ public class GlobalExceptionHandler implements ExceptionMapper<RuntimeException>
         if (ex instanceof InventoryNotFoundException e) {
             return build(
                     Response.Status.NOT_FOUND,
-                    "INVENTORY_NOT_FOUND",
+                    ErrorCode.INVENTORY_NOT_FOUND.getCode(),
+                    e.getMessage());
+        }
+
+        // 409 - Business rule violation
+        if (ex instanceof InsufficientStockException e) {
+            return build(
+                    Response.Status.CONFLICT,
+                    ErrorCode.INSUFFICIENT_RESOURCES.getCode(),
                     e.getMessage());
         }
 
         // 406 - Business rule violation
-        if (ex instanceof InsufficientStockException e) {
+        if (ex instanceof InsufficientAvailableProductException e) {
             return build(
-                    Response.Status.CONFLICT,
-                    "INSUFFICIENT_RESOURCES",
+                    Response.Status.NOT_ACCEPTABLE,
+                    ErrorCode.INSUFFICIENT_RESOURCES_AVAILABLE.getCode(),
+                    e.getMessage());
+        }
+
+        // 406 - Business rule violation
+        if (ex instanceof RedisNotFoundException e) {
+            return build(
+                    Response.Status.NOT_ACCEPTABLE,
+                    ErrorCode.REDIS_RESOURCES_AVAILABLE.getCode(),
+                    e.getMessage());
+        }
+
+        if (ex instanceof SaveHistoricalPurchaseException e) {
+            return build(
+                    Response.Status.NOT_ACCEPTABLE,
+                    ErrorCode.HISTORICAL_RESOURCES_AVAILABLE.getCode(),
                     e.getMessage());
         }
 
         // 500 - unexpected errors
         return build(
                 Response.Status.INTERNAL_SERVER_ERROR,
-                "INTERNAL_ERROR",
-                "Unexpected error occurred");
+                ErrorCode.INTERNAL_ERROR.getCode(),
+                ex.getMessage());
     }
 
     private Response build(Response.Status status, String code, String message) {

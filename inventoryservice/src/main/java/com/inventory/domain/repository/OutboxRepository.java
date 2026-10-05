@@ -2,13 +2,15 @@ package com.inventory.domain.repository;
 
 import java.util.List;
 
-import com.inventory.infrastructure.persistence.OutboxEventEntity;
-import com.inventory.infrastructure.rabbitmq.model.OutboxEvent;
+import com.inventory.domain.outbox.OutboxEvent;
 
-import io.quarkus.hibernate.orm.panache.PanacheRepository;
+public interface OutboxRepository {
 
-public interface OutboxRepository extends PanacheRepository<OutboxEventEntity> {
-    OutboxEvent save(OutboxEvent event);
+    OutboxEvent save(OutboxEvent outboxEvent);
 
-    public List<OutboxEvent> findPending();
+    List<OutboxEvent> findPending();
+
+    void markAsSent(Long id);
+
+    void incrementRetries(Long id);
 }
